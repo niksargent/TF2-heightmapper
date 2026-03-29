@@ -72,7 +72,7 @@ export function HeightPreview({ title, caption, rgba, width, height }: HeightPre
       <div className="surface-header compact">
         <div>
           <p className="eyebrow">{title}</p>
-          <h2>{caption}</h2>
+          {caption ? <h2>{caption}</h2> : null}
         </div>
       </div>
       <canvas ref={canvasRef} className="heightmap-canvas" />

@@ -3,7 +3,7 @@ import { startTransition, useDeferredValue, useEffect, useMemo, useRef, useState
 import { HeightPreview } from './components/HeightPreview'
 import { SketchCanvas } from './components/SketchCanvas'
 import { TerrainViewport } from './components/TerrainViewport'
-import { DEFAULT_TERRAIN_SETTINGS, TERRAIN_CLASS_ORDER, TERRAIN_VISUALS } from './lib/defaults'
+import { DEFAULT_TERRAIN_SETTINGS } from './lib/defaults'
 import { DEFAULT_PRESET_ID, MAP_PRESETS, describePreset, getPresetById } from './lib/mapPresets'
 import { encodeGrayscale16Png } from './lib/png16'
 import { inflateProjectSketch, parseProjectFile, serializeProject } from './lib/projectFile'
@@ -366,13 +366,15 @@ function App() {
             height={SKETCH_HEIGHT}
             brushSize={brushSize}
             activeClass={activeClass}
+            onBrushSizeChange={setBrushSize}
+            onActiveClassChange={setActiveClass}
             onPreviewChange={setPreviewSketch}
             onCommit={handleCommit}
           />
 
           <HeightPreview
             title="Heightmap preview"
-            caption="Live grayscale aligned to the current terrain range."
+            caption=""
             rgba={preview?.rgba ?? null}
             width={preview?.width ?? previewWidth}
             height={preview?.height ?? previewHeight}
@@ -391,7 +393,6 @@ function App() {
             <div className="surface-header compact">
               <div>
                 <p className="eyebrow">Map preset</p>
-                <h2>Use exact TF2 dimensions from the start.</h2>
               </div>
             </div>
 
@@ -415,45 +416,7 @@ function App() {
           <section className="surface inspector-section">
             <div className="surface-header compact">
               <div>
-                <p className="eyebrow">Brush</p>
-                <h2>Keep the paint language simple and broad.</h2>
-              </div>
-            </div>
-
-            <div className="palette">
-              {TERRAIN_CLASS_ORDER.map((terrainClass) => (
-                <button
-                  key={terrainClass}
-                  type="button"
-                  className="palette-chip"
-                  data-active={activeClass === terrainClass}
-                  onClick={() => setActiveClass(terrainClass)}
-                >
-                  <i style={{ background: TERRAIN_VISUALS[terrainClass].swatch }} />
-                  {TERRAIN_VISUALS[terrainClass].label}
-                </button>
-              ))}
-            </div>
-
-            <label className="field">
-              <span>Brush size</span>
-              <input
-                type="range"
-                min="6"
-                max="56"
-                step="1"
-                value={brushSize}
-                onChange={(event) => setBrushSize(Number(event.target.value))}
-              />
-              <strong>{brushSize}px</strong>
-            </label>
-          </section>
-
-          <section className="surface inspector-section">
-            <div className="surface-header compact">
-              <div>
                 <p className="eyebrow">Terrain generation</p>
-                <h2>Opinionated by default. Adjustable when needed.</h2>
               </div>
             </div>
 

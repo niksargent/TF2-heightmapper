@@ -212,6 +212,14 @@ input[type='range'] {
   align-items: flex-start;
 }
 
+.paint-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .surface-header.compact h2 {
   font-size: 1.5rem;
   max-width: 20ch;
@@ -357,10 +365,22 @@ input[type='range'] {
   padding: 0.9rem 1.3rem 0;
 }
 
+.palette-inline {
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .palette-chip {
   justify-content: flex-start;
   padding: 0.8rem 0.95rem;
   border-radius: 18px;
+}
+
+.field-inline {
+  padding: 0;
+  min-width: 220px;
 }
 
 .palette-chip[data-active='true'],

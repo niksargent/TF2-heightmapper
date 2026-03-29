@@ -9,6 +9,8 @@ type SketchCanvasProps = {
   height: number
   brushSize: number
   activeClass: TerrainClassId
+  onBrushSizeChange: (value: number) => void
+  onActiveClassChange: (value: TerrainClassId) => void
   onPreviewChange: (next: Uint8Array) => void
   onCommit: (origin: Uint8Array, next: Uint8Array) => void
 }
@@ -65,12 +67,30 @@ function clampPoint(value: number, size: number): number {
   return Math.max(0, Math.min(size - 1, value))
 }
 
+function getCanvasContentBox(canvas: HTMLCanvasElement) {
+  const bounds = canvas.getBoundingClientRect()
+  const styles = window.getComputedStyle(canvas)
+  const borderLeft = Number.parseFloat(styles.borderLeftWidth) || 0
+  const borderTop = Number.parseFloat(styles.borderTopWidth) || 0
+  const borderRight = Number.parseFloat(styles.borderRightWidth) || 0
+  const borderBottom = Number.parseFloat(styles.borderBottomWidth) || 0
+
+  return {
+    left: bounds.left + borderLeft,
+    top: bounds.top + borderTop,
+    width: Math.max(1, bounds.width - borderLeft - borderRight),
+    height: Math.max(1, bounds.height - borderTop - borderBottom),
+  }
+}
+
 export function SketchCanvas({
   sketch,
   width,
   height,
   brushSize,
   activeClass,
+  onBrushSizeChange,
+  onActiveClassChange,
   onPreviewChange,
   onCommit,
 }: SketchCanvasProps) {
@@ -122,8 +142,9 @@ export function SketchCanvas({
     }
     rasterContext.putImageData(image, 0, 0)
 
-    const renderWidth = Math.max(1, canvas.clientWidth)
-    const renderHeight = Math.max(1, canvas.clientHeight)
+    const contentBox = getCanvasContentBox(canvas)
+    const renderWidth = contentBox.width
+    const renderHeight = contentBox.height
     const dpr = window.devicePixelRatio || 1
     canvas.width = Math.max(1, Math.round(renderWidth * dpr))
     canvas.height = Math.max(1, Math.round(renderHeight * dpr))
@@ -135,13 +156,13 @@ export function SketchCanvas({
     context.drawImage(rasterCanvas, 0, 0, renderWidth, renderHeight)
 
     if (brushPointRef.current) {
-      const radius = (brushSize / width) * renderWidth
+      const radius = (brushSize / Math.max(1, width - 1)) * renderWidth
       context.lineWidth = 2
       context.strokeStyle = 'rgba(250, 246, 238, 0.95)'
       context.beginPath()
       context.arc(
-        (brushPointRef.current.x / width) * renderWidth,
-        (brushPointRef.current.y / height) * renderHeight,
+        (brushPointRef.current.x / Math.max(1, width - 1)) * renderWidth,
+        (brushPointRef.current.y / Math.max(1, height - 1)) * renderHeight,
         radius,
         0,
         Math.PI * 2,
@@ -176,11 +197,12 @@ export function SketchCanvas({
 
   function toSketchPoint(event: import('react').PointerEvent<HTMLCanvasElement>): Point {
     const target = event.currentTarget
-    const renderWidth = Math.max(1, target.clientWidth)
-    const renderHeight = Math.max(1, target.clientHeight)
+    const contentBox = getCanvasContentBox(target)
+    const localX = event.clientX - contentBox.left
+    const localY = event.clientY - contentBox.top
     return {
-      x: clampPoint((event.nativeEvent.offsetX / renderWidth) * (width - 1), width),
-      y: clampPoint((event.nativeEvent.offsetY / renderHeight) * (height - 1), height),
+      x: clampPoint((localX / contentBox.width) * (width - 1), width),
+      y: clampPoint((localY / contentBox.height) * (height - 1), height),
     }
   }
 
@@ -237,16 +259,35 @@ export function SketchCanvas({
     <div className="surface surface-sketch">
       <div className="surface-header">
         <div>
-          <p className="eyebrow">Sketch intent</p>
-          <h2>Paint terrain classes, not grayscale math.</h2>
+          <p className="eyebrow">Paint landscape</p>
         </div>
-        <div className="legend">
-          {legend.map((entry) => (
-            <span key={entry.label} className="legend-chip">
-              <i style={{ background: entry.swatch }} />
-              {entry.label}
-            </span>
-          ))}
+        <div className="paint-toolbar">
+          <div className="palette palette-inline">
+            {legend.map((entry, index) => (
+              <button
+                key={entry.label}
+                type="button"
+                className="palette-chip"
+                data-active={activeClass === index}
+                onClick={() => onActiveClassChange(index as TerrainClassId)}
+              >
+                <i style={{ background: entry.swatch }} />
+                {entry.label}
+              </button>
+            ))}
+          </div>
+          <label className="field field-inline">
+            <span>Brush size</span>
+            <input
+              type="range"
+              min="6"
+              max="56"
+              step="1"
+              value={brushSize}
+              onChange={(event) => onBrushSizeChange(Number(event.target.value))}
+            />
+            <strong>{brushSize}px</strong>
+          </label>
         </div>
       </div>
 
