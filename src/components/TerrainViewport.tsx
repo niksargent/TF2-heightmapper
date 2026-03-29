@@ -82,9 +82,10 @@ export function TerrainViewport({ heights, width, height, rangeMax }: TerrainVie
     scene.add(waterMesh)
 
     const resize = () => {
-      const bounds = mount.getBoundingClientRect()
-      renderer.setSize(bounds.width, bounds.height, false)
-      camera.aspect = bounds.width / Math.max(1, bounds.height)
+      const renderWidth = Math.max(1, mount.clientWidth)
+      const renderHeight = Math.max(1, mount.clientHeight)
+      renderer.setSize(renderWidth, renderHeight, false)
+      camera.aspect = renderWidth / Math.max(1, renderHeight)
       camera.updateProjectionMatrix()
     }
 

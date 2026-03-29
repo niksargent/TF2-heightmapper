@@ -36,15 +36,16 @@ export function HeightPreview({ title, caption, rgba, width, height }: HeightPre
       const imageData = new ImageData(new Uint8ClampedArray(rgba), width, height)
       rasterContext.putImageData(imageData, 0, 0)
 
-      const bounds = canvas.getBoundingClientRect()
+      const renderWidth = Math.max(1, canvas.clientWidth)
+      const renderHeight = Math.max(1, canvas.clientHeight)
       const dpr = window.devicePixelRatio || 1
-      canvas.width = Math.max(1, Math.round(bounds.width * dpr))
-      canvas.height = Math.max(1, Math.round(bounds.height * dpr))
+      canvas.width = Math.max(1, Math.round(renderWidth * dpr))
+      canvas.height = Math.max(1, Math.round(renderHeight * dpr))
       context.setTransform(1, 0, 0, 1, 0, 0)
       context.scale(dpr, dpr)
-      context.clearRect(0, 0, bounds.width, bounds.height)
+      context.clearRect(0, 0, renderWidth, renderHeight)
       context.imageSmoothingEnabled = true
-      context.drawImage(raster, 0, 0, bounds.width, bounds.height)
+      context.drawImage(raster, 0, 0, renderWidth, renderHeight)
     }
 
     drawRef.current()

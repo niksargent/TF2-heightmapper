@@ -122,25 +122,26 @@ export function SketchCanvas({
     }
     rasterContext.putImageData(image, 0, 0)
 
-    const bounds = canvas.getBoundingClientRect()
+    const renderWidth = Math.max(1, canvas.clientWidth)
+    const renderHeight = Math.max(1, canvas.clientHeight)
     const dpr = window.devicePixelRatio || 1
-    canvas.width = Math.max(1, Math.round(bounds.width * dpr))
-    canvas.height = Math.max(1, Math.round(bounds.height * dpr))
+    canvas.width = Math.max(1, Math.round(renderWidth * dpr))
+    canvas.height = Math.max(1, Math.round(renderHeight * dpr))
 
     context.setTransform(1, 0, 0, 1, 0, 0)
     context.scale(dpr, dpr)
-    context.clearRect(0, 0, bounds.width, bounds.height)
+    context.clearRect(0, 0, renderWidth, renderHeight)
     context.imageSmoothingEnabled = false
-    context.drawImage(rasterCanvas, 0, 0, bounds.width, bounds.height)
+    context.drawImage(rasterCanvas, 0, 0, renderWidth, renderHeight)
 
     if (brushPointRef.current) {
-      const radius = (brushSize / width) * bounds.width
+      const radius = (brushSize / width) * renderWidth
       context.lineWidth = 2
       context.strokeStyle = 'rgba(250, 246, 238, 0.95)'
       context.beginPath()
       context.arc(
-        (brushPointRef.current.x / width) * bounds.width,
-        (brushPointRef.current.y / height) * bounds.height,
+        (brushPointRef.current.x / width) * renderWidth,
+        (brushPointRef.current.y / height) * renderHeight,
         radius,
         0,
         Math.PI * 2,
@@ -174,10 +175,12 @@ export function SketchCanvas({
   }
 
   function toSketchPoint(event: import('react').PointerEvent<HTMLCanvasElement>): Point {
-    const bounds = event.currentTarget.getBoundingClientRect()
+    const target = event.currentTarget
+    const renderWidth = Math.max(1, target.clientWidth)
+    const renderHeight = Math.max(1, target.clientHeight)
     return {
-      x: clampPoint(((event.clientX - bounds.left) / bounds.width) * (width - 1), width),
-      y: clampPoint(((event.clientY - bounds.top) / bounds.height) * (height - 1), height),
+      x: clampPoint((event.nativeEvent.offsetX / renderWidth) * (width - 1), width),
+      y: clampPoint((event.nativeEvent.offsetY / renderHeight) * (height - 1), height),
     }
   }
 
