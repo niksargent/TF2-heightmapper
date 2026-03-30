@@ -6,9 +6,10 @@ type HeightPreviewProps = {
   rgba: Uint8ClampedArray | null
   width: number
   height: number
+  debugEdges: boolean
 }
 
-export function HeightPreview({ title, caption, rgba, width, height }: HeightPreviewProps) {
+export function HeightPreview({ title, caption, rgba, width, height, debugEdges }: HeightPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const rasterCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const drawRef = useRef<(() => void) | null>(null)
@@ -46,6 +47,12 @@ export function HeightPreview({ title, caption, rgba, width, height }: HeightPre
       context.clearRect(0, 0, renderWidth, renderHeight)
       context.imageSmoothingEnabled = true
       context.drawImage(raster, 0, 0, renderWidth, renderHeight)
+
+      if (debugEdges) {
+        context.lineWidth = 2
+        context.strokeStyle = 'rgba(212, 40, 40, 0.95)'
+        context.strokeRect(1, 1, Math.max(0, renderWidth - 2), Math.max(0, renderHeight - 2))
+      }
     }
 
     drawRef.current()

@@ -7,7 +7,7 @@ import { DEFAULT_TERRAIN_SETTINGS } from './lib/defaults'
 import { DEFAULT_PRESET_ID, MAP_PRESETS, describePreset, getPresetById } from './lib/mapPresets'
 import { encodeGrayscale16Png } from './lib/png16'
 import { inflateProjectSketch, parseProjectFile, serializeProject } from './lib/projectFile'
-import { buildExportProfile, computePreviewResolution, createInitialSketch, generateTerrain } from './lib/terrain'
+import { computePreviewResolution, createInitialSketch, generateTerrain } from './lib/terrain'
 import { createWorkerClient } from './lib/workerClient'
 import {
   SKETCH_HEIGHT,
@@ -219,13 +219,11 @@ function App() {
         } catch {
           setWorkerFailed(true)
           const generated = generateTerrain(input)
-          const profile = buildExportProfile(preset.width, preset.height, generated.maxHeight)
-          pngBytes = encodeGrayscale16Png(generated.heights, preset.width, preset.height, profile.rangeMax)
+          pngBytes = encodeGrayscale16Png(generated.heights, preset.width, preset.height, 100)
         }
       } else {
         const generated = generateTerrain(input)
-        const profile = buildExportProfile(preset.width, preset.height, generated.maxHeight)
-        pngBytes = encodeGrayscale16Png(generated.heights, preset.width, preset.height, profile.rangeMax)
+        pngBytes = encodeGrayscale16Png(generated.heights, preset.width, preset.height, 100)
       }
 
       const blob = new Blob([Uint8Array.from(pngBytes)], { type: 'image/png' })
@@ -277,7 +275,7 @@ function App() {
         height: preset.height,
         bitDepth: 16 as const,
         rangeMin: 0,
-        rangeMax: preview.rangeMax,
+        rangeMax: settings.importMaxElevation,
         waterLevel: 0,
       }
     : {
@@ -285,7 +283,7 @@ function App() {
         height: preset.height,
         bitDepth: 16 as const,
         rangeMin: 0,
-        rangeMax: settings.highElevation,
+        rangeMax: settings.importMaxElevation,
         waterLevel: 0,
       }
 
@@ -366,6 +364,7 @@ function App() {
             height={SKETCH_HEIGHT}
             brushSize={brushSize}
             activeClass={activeClass}
+            debugEdges={settings.debugEdges}
             onBrushSizeChange={setBrushSize}
             onActiveClassChange={setActiveClass}
             onPreviewChange={setPreviewSketch}
@@ -378,13 +377,15 @@ function App() {
             rgba={preview?.rgba ?? null}
             width={preview?.width ?? previewWidth}
             height={preview?.height ?? previewHeight}
+            debugEdges={settings.debugEdges}
           />
 
           <TerrainViewport
             heights={preview?.heights ?? null}
             width={preview?.width ?? previewWidth}
             height={preview?.height ?? previewHeight}
-            rangeMax={preview?.rangeMax ?? settings.highElevation}
+            rangeMax={preview?.rangeMax ?? 100}
+            debugEdges={settings.debugEdges}
           />
         </div>
 
@@ -421,49 +422,62 @@ function App() {
             </div>
 
             <label className="field">
-              <span>Low land elevation</span>
+              <span>Low land height</span>
+              <input
+                type="range"
+                min="1"
+                max="40"
+                step="1"
+                value={settings.lowPercent}
+                onChange={(event) => updateSetting('lowPercent', Number(event.target.value))}
+              />
+              <strong>{settings.lowPercent}%</strong>
+            </label>
+
+            <label className="field">
+              <span>Medium land height</span>
               <input
                 type="range"
                 min="5"
                 max="80"
                 step="1"
-                value={settings.lowElevation}
-                onChange={(event) => updateSetting('lowElevation', Number(event.target.value))}
+                value={settings.mediumPercent}
+                onChange={(event) => updateSetting('mediumPercent', Number(event.target.value))}
               />
-              <strong>{settings.lowElevation}m</strong>
+              <strong>{settings.mediumPercent}%</strong>
             </label>
 
             <label className="field">
-              <span>Medium land elevation</span>
+              <span>High land height</span>
               <input
                 type="range"
-                min="20"
-                max="180"
+                min="10"
+                max="100"
                 step="1"
-                value={settings.mediumElevation}
-                onChange={(event) => updateSetting('mediumElevation', Number(event.target.value))}
+                value={settings.highPercent}
+                onChange={(event) => updateSetting('highPercent', Number(event.target.value))}
               />
-              <strong>{settings.mediumElevation}m</strong>
+              <strong>{settings.highPercent}%</strong>
             </label>
 
             <label className="field">
-              <span>High land elevation</span>
+              <span>TF2 max elevation</span>
               <input
                 type="range"
-                min="60"
-                max="400"
-                step="1"
-                value={settings.highElevation}
-                onChange={(event) => updateSetting('highElevation', Number(event.target.value))}
+                min="50"
+                max="3200"
+                step="10"
+                value={settings.importMaxElevation}
+                onChange={(event) => updateSetting('importMaxElevation', Number(event.target.value))}
               />
-              <strong>{settings.highElevation}m</strong>
+              <strong>{settings.importMaxElevation}m</strong>
             </label>
 
             <label className="field">
               <span>Smoothing</span>
               <input
                 type="range"
-                min="6"
+                min="0"
                 max="72"
                 step="1"
                 value={settings.smoothing}
@@ -479,6 +493,15 @@ function App() {
                 onChange={(event) => updateSetting('noiseEnabled', event.target.checked)}
               />
               <span>Natural undulation</span>
+            </label>
+
+            <label className="toggle">
+              <input
+                type="checkbox"
+                checked={settings.debugEdges}
+                onChange={(event) => updateSetting('debugEdges', event.target.checked)}
+              />
+              <span>Debug edges</span>
             </label>
 
             <label className="field">
@@ -551,7 +574,7 @@ function App() {
             </dl>
 
             <p className="support-copy">
-              The exported PNG is grayscale only. Water is pinned to 0m, and all land remains at least 5m above sea level.
+              Paint with relative heights. White always means full height range; TF2 metres are set separately through the suggested import max elevation.
             </p>
           </section>
         </aside>

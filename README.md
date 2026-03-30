@@ -1,73 +1,90 @@
-# React + TypeScript + Vite
+# TF2 Heightmapper
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Browser-based terrain sketch tool for creating Transport Fever 2 heightmaps from simple painted landscape intent.
 
-Currently, two official plugins are available:
+## Current state
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Phase 1 is in active prototype form and already supports:
 
-## React Compiler
+- painting `Water`, `Low`, `Medium`, and `High` terrain on a sketch canvas
+- live grayscale heightmap preview
+- live 3D terrain preview with orbit controls and water plane
+- TF2 preset map sizes
+- 16-bit grayscale PNG export
+- save/load of local project files
+- undo/redo
+- noise-based natural undulation controls
+- region-aware smoothing between painted land areas
+- shoreline-specific smoothing that starts at the water edge
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The terrain model is now based on relative height bands, not direct metres:
 
-## Expanding the ESLint configuration
+- `Low`, `Medium`, and `High` are percentages of the full grayscale range
+- `TF2 max elevation` is a separate import guidance value for the game
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Tech stack
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- React
+- TypeScript
+- Vite
+- Canvas 2D for painting and grayscale preview
+- Three.js for 3D terrain preview
+- Web Worker terrain generation with main-thread fallback
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Getting started
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Scripts
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- `npm run dev` starts the local app
+- `npm run build` creates a production build
+- `npm run preview` previews the production build locally
+- `npm run lint` runs ESLint
+- `npm run test` runs Vitest
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Export model
+
+The app exports:
+
+- `16-bit` grayscale PNG
+- exact TF2 preset resolution
+- water at `0`
+- full grayscale range reserved for the terrain model
+
+The TF2 import dialog still controls the real-world metre scale. The app surfaces that as:
+
+- `TF2 max elevation`
+- `Water level`
+- recommended import range in the export panel
+
+## Deployment
+
+GitHub Pages deployment is configured in:
+
+- [.github/workflows/deploy-pages.yml](C:/Users/nik_sargent/OneDrive/Code/TF2-heightmapper/.github/workflows/deploy-pages.yml)
+
+To publish:
+
+1. Push the repository to GitHub.
+2. In GitHub repository settings, enable `Pages` with source set to `GitHub Actions`.
+3. Push to `main` to trigger the workflow.
+
+## Important repo files
+
+- [src/App.tsx](C:/Users/nik_sargent/OneDrive/Code/TF2-heightmapper/src/App.tsx)
+- [src/components/SketchCanvas.tsx](C:/Users/nik_sargent/OneDrive/Code/TF2-heightmapper/src/components/SketchCanvas.tsx)
+- [src/components/HeightPreview.tsx](C:/Users/nik_sargent/OneDrive/Code/TF2-heightmapper/src/components/HeightPreview.tsx)
+- [src/components/TerrainViewport.tsx](C:/Users/nik_sargent/OneDrive/Code/TF2-heightmapper/src/components/TerrainViewport.tsx)
+- [src/lib/terrain.ts](C:/Users/nik_sargent/OneDrive/Code/TF2-heightmapper/src/lib/terrain.ts)
+- [src/lib/png16.ts](C:/Users/nik_sargent/OneDrive/Code/TF2-heightmapper/src/lib/png16.ts)
+- [plan.md](C:/Users/nik_sargent/OneDrive/Code/TF2-heightmapper/plan.md)
+
+## Known issues
+
+- There is still a paint-to-preview alignment bug near the outer edges of the canvas.
+- The smoothing model is now much better, but still needs more real-world playtesting.
+- Preview performance is improved, but weaker browser environments can still struggle.

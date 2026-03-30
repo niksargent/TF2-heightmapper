@@ -6,7 +6,7 @@ import { createInitialSketch, generateTerrain } from './terrain'
 import { SKETCH_WIDTH, SKETCH_HEIGHT, TerrainClass } from './types'
 
 describe('terrain generation', () => {
-  it('keeps water at 0m and land at or above 5m', () => {
+  it('keeps water at 0 and land at or above 1 percent', () => {
     const sketch = createInitialSketch(SKETCH_WIDTH, SKETCH_HEIGHT)
     for (let y = 80; y < 176; y += 1) {
       for (let x = 40; x < 120; x += 1) {
@@ -25,7 +25,7 @@ describe('terrain generation', () => {
 
     expect(generated.minHeight).toBe(0)
     const nonWater = Array.from(generated.heights).filter((height) => height > 0)
-    expect(Math.min(...nonWater)).toBeGreaterThanOrEqual(5)
+    expect(Math.min(...nonWater)).toBeGreaterThanOrEqual(1)
   })
 
   it('creates a valid 16-bit grayscale PNG header', () => {

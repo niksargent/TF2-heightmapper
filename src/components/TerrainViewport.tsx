@@ -7,6 +7,7 @@ type TerrainViewportProps = {
   width: number
   height: number
   rangeMax: number
+  debugEdges: boolean
 }
 
 type SceneBundle = {
@@ -20,7 +21,7 @@ type SceneBundle = {
   resizeObserver: ResizeObserver
 }
 
-export function TerrainViewport({ heights, width, height, rangeMax }: TerrainViewportProps) {
+export function TerrainViewport({ heights, width, height, rangeMax, debugEdges }: TerrainViewportProps) {
   const mountRef = useRef<HTMLDivElement | null>(null)
   const bundleRef = useRef<SceneBundle | null>(null)
   const noticeRef = useRef<HTMLDivElement | null>(null)
@@ -185,6 +186,7 @@ export function TerrainViewport({ heights, width, height, rangeMax }: TerrainVie
       flatShading: false,
       roughness: 0.92,
       metalness: 0.06,
+      wireframe: debugEdges,
     })
     const terrainMesh = new THREE.Mesh(geometry, material)
     bundle.scene.add(terrainMesh)

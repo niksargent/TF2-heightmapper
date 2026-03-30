@@ -23,13 +23,13 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
     const profile = buildExportProfile(
       request.input.outputWidth,
       request.input.outputHeight,
-      generated.maxHeight,
+      request.input.settings.importMaxElevation,
     )
     const png = encodeGrayscale16Png(
       generated.heights,
       request.input.outputWidth,
       request.input.outputHeight,
-      profile.rangeMax,
+      100,
     )
     const response: WorkerResponse = {
       type: 'export',

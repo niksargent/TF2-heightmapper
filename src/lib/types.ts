@@ -22,15 +22,17 @@ export type MapPreset = {
 }
 
 export type TerrainSettings = {
-  lowElevation: number
-  mediumElevation: number
-  highElevation: number
+  lowPercent: number
+  mediumPercent: number
+  highPercent: number
+  importMaxElevation: number
   smoothing: number
   noiseEnabled: boolean
   noiseAmplitude: number
   noiseScale: number
   noiseOctaves: number
   noiseSeed: number
+  debugEdges: boolean
 }
 
 export type PreviewTerrain = {

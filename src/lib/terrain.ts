@@ -7,8 +7,6 @@ type Region = {
   targetHeight: number
   cells: Uint32Array
   adjacency: number[]
-  maxDepth: number
-  coreCount: number
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -111,12 +109,24 @@ function getTargetHeight(terrainClass: TerrainClassId, settings: TerrainSettings
     case TerrainClass.Water:
       return 0
     case TerrainClass.Low:
-      return settings.lowElevation
+      return settings.lowPercent
     case TerrainClass.Medium:
-      return settings.mediumElevation
+      return settings.mediumPercent
     default:
-      return settings.highElevation
+      return settings.highPercent
   }
+}
+
+function getNoiseAmplitudePercent(settings: TerrainSettings): number {
+  return (settings.noiseAmplitude / Math.max(1, settings.importMaxElevation)) * 100
+}
+
+function buildDirectHeightField(sketch: Uint8Array, width: number, height: number, settings: TerrainSettings): Float32Array {
+  const field = new Float32Array(width * height)
+  for (let index = 0; index < sketch.length; index += 1) {
+    field[index] = getTargetHeight(sketch[index] as TerrainClassId, settings)
+  }
+  return field
 }
 
 function buildRegions(sketch: Uint8Array, width: number, height: number, settings: TerrainSettings) {
@@ -169,8 +179,6 @@ function buildRegions(sketch: Uint8Array, width: number, height: number, setting
       targetHeight: getTargetHeight(terrainClass, settings),
       cells: Uint32Array.from(cells),
       adjacency: [],
-      maxDepth: 0,
-      coreCount: 0,
     })
     nextRegionId += 1
   }
@@ -204,18 +212,21 @@ function buildRegions(sketch: Uint8Array, width: number, height: number, setting
   return { regions, regionIds }
 }
 
-function buildRegionDepthAndCore(
-  region: Region,
+function buildBoundaryDistanceField(
+  regionId: number,
+  neighborId: number,
   regionIds: Int32Array,
   width: number,
   height: number,
-) {
-  const depthField = new Float32Array(width * height)
-  const queue = new Uint32Array(region.cells.length)
+  regionCells: Uint32Array,
+): Float32Array {
+  const field = new Float32Array(width * height)
+  field.fill(-1)
+  const queue = new Uint32Array(regionCells.length)
   let head = 0
   let tail = 0
 
-  for (const cell of region.cells) {
+  for (const cell of regionCells) {
     const x = cell % width
     const y = Math.floor(cell / width)
     const neighbors = [
@@ -225,84 +236,18 @@ function buildRegionDepthAndCore(
       y < height - 1 ? cell + width : -1,
     ]
 
-    let isBoundary = false
+    let touchesNeighbor = false
     for (const neighbor of neighbors) {
-      if (neighbor === -1 || regionIds[neighbor] !== region.id) {
-        isBoundary = true
+      if (neighbor !== -1 && regionIds[neighbor] === neighborId) {
+        touchesNeighbor = true
         break
       }
     }
 
-    if (isBoundary) {
-      depthField[cell] = 1
+    if (touchesNeighbor) {
+      field[cell] = 0
       queue[tail] = cell
       tail += 1
-    }
-  }
-
-  while (head < tail) {
-    const index = queue[head]
-    head += 1
-    const nextDepth = depthField[index] + 1
-    const x = index % width
-    const y = Math.floor(index / width)
-    const neighbors = [
-      x > 0 ? index - 1 : -1,
-      x < width - 1 ? index + 1 : -1,
-      y > 0 ? index - width : -1,
-      y < height - 1 ? index + width : -1,
-    ]
-
-    for (const neighbor of neighbors) {
-      if (neighbor === -1 || regionIds[neighbor] !== region.id || depthField[neighbor] !== 0) {
-        continue
-      }
-      depthField[neighbor] = nextDepth
-      queue[tail] = neighbor
-      tail += 1
-    }
-  }
-
-  let maxDepth = 1
-  for (const cell of region.cells) {
-    maxDepth = Math.max(maxDepth, depthField[cell] || 1)
-  }
-  region.maxDepth = maxDepth
-
-  const coreField = new Uint8Array(width * height)
-  const coreThreshold = Math.max(1, Math.floor(maxDepth * 0.45))
-  for (const cell of region.cells) {
-    if (depthField[cell] >= coreThreshold) {
-      coreField[cell] = 1
-      region.coreCount += 1
-    }
-  }
-
-  if (region.coreCount === 0) {
-    for (const cell of region.cells) {
-      if (depthField[cell] === maxDepth) {
-        coreField[cell] = 1
-        region.coreCount += 1
-      }
-    }
-  }
-
-  return coreField
-}
-
-function buildCoreDistanceField(coreField: Uint8Array, width: number, height: number): Float32Array {
-  const field = new Float32Array(width * height)
-  const queue = new Uint32Array(width * height)
-  let head = 0
-  let tail = 0
-
-  for (let index = 0; index < coreField.length; index += 1) {
-    if (coreField[index] === 1) {
-      field[index] = 0
-      queue[tail] = index
-      tail += 1
-    } else {
-      field[index] = -1
     }
   }
 
@@ -320,7 +265,7 @@ function buildCoreDistanceField(coreField: Uint8Array, width: number, height: nu
     ]
 
     for (const neighbor of neighbors) {
-      if (neighbor === -1 || field[neighbor] !== -1) {
+      if (neighbor === -1 || regionIds[neighbor] !== regionId || field[neighbor] !== -1) {
         continue
       }
       field[neighbor] = nextDistance
@@ -332,34 +277,146 @@ function buildCoreDistanceField(coreField: Uint8Array, width: number, height: nu
   return field
 }
 
+function buildInteriorDistanceField(
+  regionId: number,
+  regionIds: Int32Array,
+  width: number,
+  height: number,
+  regionCells: Uint32Array,
+): Float32Array {
+  const field = new Float32Array(width * height)
+  const queue = new Uint32Array(regionCells.length)
+  let head = 0
+  let tail = 0
+
+  for (const cell of regionCells) {
+    const x = cell % width
+    const y = Math.floor(cell / width)
+    const neighbors = [
+      x > 0 ? cell - 1 : -1,
+      x < width - 1 ? cell + 1 : -1,
+      y > 0 ? cell - width : -1,
+      y < height - 1 ? cell + width : -1,
+    ]
+
+    let isBoundary = false
+    for (const neighbor of neighbors) {
+      if (neighbor === -1 || regionIds[neighbor] !== regionId) {
+        isBoundary = true
+        break
+      }
+    }
+
+    if (isBoundary) {
+      field[cell] = 0
+      queue[tail] = cell
+      tail += 1
+    } else {
+      field[cell] = -1
+    }
+  }
+
+  while (head < tail) {
+    const index = queue[head]
+    head += 1
+    const nextDistance = field[index] + 1
+    const x = index % width
+    const y = Math.floor(index / width)
+    const neighbors = [
+      x > 0 ? index - 1 : -1,
+      x < width - 1 ? index + 1 : -1,
+      y > 0 ? index - width : -1,
+      y < height - 1 ? index + width : -1,
+    ]
+
+    for (const neighbor of neighbors) {
+      if (neighbor === -1 || regionIds[neighbor] !== regionId || field[neighbor] !== -1) {
+        continue
+      }
+      field[neighbor] = nextDistance
+      queue[tail] = neighbor
+      tail += 1
+    }
+  }
+
+  return field
+}
+
+function interpolatePinnedShoreline(targetHeight: number, waterDistance: number, corridorWidth: number): number {
+  if (waterDistance < 0) {
+    return targetHeight
+  }
+
+  const t = clamp((waterDistance + 1) / Math.max(1, corridorWidth + 1), 0, 1)
+  return clamp(lerp(1, targetHeight, t), 1, targetHeight)
+}
+
 function buildInterpolatedHeightField(sketch: Uint8Array, width: number, height: number, settings: TerrainSettings): Float32Array {
+  if (settings.smoothing <= 0) {
+    return buildDirectHeightField(sketch, width, height, settings)
+  }
+
   const { regions, regionIds } = buildRegions(sketch, width, height, settings)
-  const coreDistanceFields = regions.map((region) =>
-    buildCoreDistanceField(buildRegionDepthAndCore(region, regionIds, width, height), width, height),
-  )
-  const falloff = 1.15 + settings.smoothing / 42
+  const corridorWidth = Math.max(1, settings.smoothing * 2)
   const heightField = new Float32Array(width * height)
 
-  for (let index = 0; index < heightField.length; index += 1) {
-    const currentRegion = regions[regionIds[index]]
-    if (currentRegion.terrainClass === TerrainClass.Water) {
-      heightField[index] = 0
+  for (const region of regions) {
+    for (const cell of region.cells) {
+      heightField[cell] = region.targetHeight
+    }
+
+    if (region.terrainClass === TerrainClass.Water || region.adjacency.length === 0) {
       continue
     }
 
-    const candidateIds = [currentRegion.id, ...currentRegion.adjacency]
-    let weightedHeight = 0
-    let weightSum = 0
+    const landBoundaryFields = region.adjacency
+      .filter((neighborId) => {
+        const neighbor = regions[neighborId]
+        return neighbor.terrainClass !== TerrainClass.Water && neighbor.targetHeight > region.targetHeight
+      })
+      .map((neighborId) => ({
+        neighborId,
+        field: buildBoundaryDistanceField(region.id, neighborId, regionIds, width, height, region.cells),
+      }))
+    const waterBoundaryFields = region.adjacency
+      .filter((neighborId) => regions[neighborId].terrainClass === TerrainClass.Water)
+      .map((neighborId) => ({
+      neighborId,
+      field: buildBoundaryDistanceField(region.id, neighborId, regionIds, width, height, region.cells),
+    }))
+    const interiorField = buildInteriorDistanceField(region.id, regionIds, width, height, region.cells)
 
-    for (const candidateId of candidateIds) {
-      const candidate = regions[candidateId]
-      const distance = coreDistanceFields[candidateId][index]
-      const weight = 1 / Math.pow(distance + 1, falloff)
-      weightedHeight += candidate.targetHeight * weight
-      weightSum += weight
+    for (const cell of region.cells) {
+      const interiorDistance = interiorField[cell]
+      if (interiorDistance > corridorWidth) {
+        heightField[cell] = region.targetHeight
+      } else {
+        let localHeight = region.targetHeight
+
+        for (const boundary of landBoundaryFields) {
+          const distance = boundary.field[cell]
+          if (distance < 0 || distance > corridorWidth) {
+            continue
+          }
+
+          const t = 1 - distance / (corridorWidth + 1)
+          const eased = smoothstep(t)
+          const neighborHeight = regions[boundary.neighborId].targetHeight
+          const rampHeight = lerp(region.targetHeight, neighborHeight, eased)
+          localHeight = Math.max(localHeight, rampHeight)
+        }
+
+        heightField[cell] = localHeight
+      }
+
+      for (const boundary of waterBoundaryFields) {
+        const distance = boundary.field[cell]
+        if (distance < 0 || distance > corridorWidth) {
+          continue
+        }
+        heightField[cell] = interpolatePinnedShoreline(heightField[cell], distance, corridorWidth)
+      }
     }
-
-    heightField[index] = weightSum > 0 ? weightedHeight / weightSum : currentRegion.targetHeight
   }
 
   return heightField
@@ -379,13 +436,13 @@ export function computePreviewResolution(width: number, height: number, maxEdge:
   return [Math.max(96, Math.round(maxEdge * aspect)), maxEdge]
 }
 
-export function buildExportProfile(width: number, height: number, maxHeight: number): ExportProfile {
+export function buildExportProfile(width: number, height: number, importMaxElevation: number): ExportProfile {
   return {
     width,
     height,
     bitDepth: 16,
     rangeMin: 0,
-    rangeMax: Math.max(1, Math.ceil(maxHeight)),
+    rangeMax: Math.max(1, Math.ceil(importMaxElevation)),
     waterLevel: 0,
   }
 }
@@ -403,10 +460,11 @@ export function generateTerrain(input: GenerateTerrainInput): PreviewTerrain {
   const baseHeight = buildInterpolatedHeightField(sketch, sketchWidth, sketchHeight, settings)
   const noise = buildNoiseField(sketchWidth, sketchHeight, settings)
   const heights = new Uint16Array(outputWidth * outputHeight)
+  const noiseAmplitudePercent = getNoiseAmplitudePercent(settings)
 
   let minHeight = Number.POSITIVE_INFINITY
   let maxHeight = Number.NEGATIVE_INFINITY
-  const topTarget = settings.highElevation + (settings.noiseEnabled ? settings.noiseAmplitude * 1.25 : 0)
+  const topTarget = Math.min(100, settings.highPercent + (settings.noiseEnabled ? noiseAmplitudePercent * 1.25 : 0))
 
   for (let y = 0; y < outputHeight; y += 1) {
     const sampleY = ((y + 0.5) / outputHeight) * sketchHeight - 0.5
@@ -424,9 +482,9 @@ export function generateTerrain(input: GenerateTerrainInput): PreviewTerrain {
 
       const base = sampleBilinear(baseHeight, sketchWidth, sketchHeight, sampleX, sampleY)
       const noiseValue = settings.noiseEnabled
-        ? sampleBilinear(noise, sketchWidth, sketchHeight, sampleX, sampleY) * settings.noiseAmplitude
+        ? sampleBilinear(noise, sketchWidth, sketchHeight, sampleX, sampleY) * noiseAmplitudePercent
         : 0
-      const heightValue = clamp(base + noiseValue, 5, topTarget)
+      const heightValue = clamp(base + noiseValue, 1, topTarget)
       const rounded = Math.round(heightValue)
       heights[index] = rounded
       minHeight = Math.min(minHeight, rounded)
@@ -434,7 +492,7 @@ export function generateTerrain(input: GenerateTerrainInput): PreviewTerrain {
     }
   }
 
-  const profile = buildExportProfile(outputWidth, outputHeight, maxHeight)
+  const profile = buildExportProfile(outputWidth, outputHeight, 100)
 
   return {
     width: outputWidth,

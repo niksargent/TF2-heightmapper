@@ -1,15 +1,17 @@
 import { TerrainClass, type TerrainClassId, type TerrainSettings, type TerrainVisual } from './types'
 
 export const DEFAULT_TERRAIN_SETTINGS: TerrainSettings = {
-  lowElevation: 20,
-  mediumElevation: 80,
-  highElevation: 200,
+  lowPercent: 5,
+  mediumPercent: 20,
+  highPercent: 50,
+  importMaxElevation: 400,
   smoothing: 42,
   noiseEnabled: true,
   noiseAmplitude: 14,
   noiseScale: 18,
   noiseOctaves: 3,
   noiseSeed: 3712,
+  debugEdges: false,
 }
 
 export const TERRAIN_VISUALS: Record<TerrainClassId, TerrainVisual> = {
