@@ -9,7 +9,6 @@ type SketchCanvasProps = {
   height: number
   brushSize: number
   activeClass: TerrainClassId
-  debugEdges: boolean
   onBrushSizeChange: (value: number) => void
   onActiveClassChange: (value: TerrainClassId) => void
   onPreviewChange: (next: Uint8Array) => void
@@ -90,7 +89,6 @@ export function SketchCanvas({
   height,
   brushSize,
   activeClass,
-  debugEdges,
   onBrushSizeChange,
   onActiveClassChange,
   onPreviewChange,
@@ -134,9 +132,8 @@ export function SketchCanvas({
       return
     }
     const image = rasterContext.createImageData(width, height)
-    const renderSource = debugEdges ? addDebugEdges(buffer, width, height) : buffer
-    for (let index = 0; index < renderSource.length; index += 1) {
-      const swatch = TERRAIN_VISUALS[renderSource[index] as TerrainClassId]
+    for (let index = 0; index < buffer.length; index += 1) {
+      const swatch = TERRAIN_VISUALS[buffer[index] as TerrainClassId]
       const pixelOffset = index * 4
       image.data[pixelOffset] = swatch.sketchRgb[0]
       image.data[pixelOffset + 1] = swatch.sketchRgb[1]
@@ -178,7 +175,7 @@ export function SketchCanvas({
     if (!drawingRef.current) {
       renderBuffer(sketch)
     }
-  }, [sketch, width, height, brushSize, debugEdges])
+  }, [sketch, width, height, brushSize])
 
   useEffect(() => {
     return () => {
@@ -307,18 +304,5 @@ export function SketchCanvas({
       />
     </div>
   )
-}
-
-function addDebugEdges(source: Uint8Array, width: number, height: number): Uint8Array {
-  const withEdges = source.slice()
-  for (let x = 0; x < width; x += 1) {
-    withEdges[x] = TerrainClass.High
-    withEdges[(height - 1) * width + x] = TerrainClass.Medium
-  }
-  for (let y = 0; y < height; y += 1) {
-    withEdges[y * width] = TerrainClass.Water
-    withEdges[y * width + width - 1] = TerrainClass.Low
-  }
-  return withEdges
 }
 

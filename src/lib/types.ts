@@ -32,7 +32,6 @@ export type TerrainSettings = {
   noiseScale: number
   noiseOctaves: number
   noiseSeed: number
-  debugEdges: boolean
 }
 
 export type PreviewTerrain = {
@@ -62,8 +61,34 @@ export type ProjectFileV1 = {
   sketchWidth: number
   sketchHeight: number
   sketch: string
+  settings: {
+    lowElevation?: number
+    mediumElevation?: number
+    highElevation?: number
+    lowPercent?: number
+    mediumPercent?: number
+    highPercent?: number
+    importMaxElevation?: number
+    smoothing?: number
+    noiseEnabled?: boolean
+    noiseAmplitude?: number
+    noiseScale?: number
+    noiseOctaves?: number
+    noiseSeed?: number
+  }
+}
+
+export type ProjectFileV2 = {
+  version: 2
+  createdAt: string
+  presetId: string
+  sketchWidth: number
+  sketchHeight: number
+  sketch: string
   settings: TerrainSettings
 }
+
+export type ProjectFile = ProjectFileV1 | ProjectFileV2
 
 export type GenerateTerrainInput = {
   sketch: Uint8Array

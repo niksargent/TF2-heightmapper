@@ -7,11 +7,10 @@ export const DEFAULT_TERRAIN_SETTINGS: TerrainSettings = {
   importMaxElevation: 400,
   smoothing: 42,
   noiseEnabled: true,
-  noiseAmplitude: 14,
+  noiseAmplitude: 4,
   noiseScale: 18,
   noiseOctaves: 3,
   noiseSeed: 3712,
-  debugEdges: false,
 }
 
 export const TERRAIN_VISUALS: Record<TerrainClassId, TerrainVisual> = {

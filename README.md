@@ -85,6 +85,9 @@ To publish:
 
 ## Known issues
 
-- There is still a paint-to-preview alignment bug near the outer edges of the canvas.
-- The smoothing model is now much better, but still needs more real-world playtesting.
-- Preview performance is improved, but weaker browser environments can still struggle.
+- TF2 import testing for the latest true 16-bit export path is still pending.
+- Older saved project files are auto-migrated into the current percentage-based terrain model when loaded.
+
+## Future ideas
+
+- Optional `Minecraft mode` that deliberately quantizes terrain into visible stepped levels for a blocky export style.

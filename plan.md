@@ -148,14 +148,15 @@ Current implementation targets:
 
 ## Known issues
 
-- There is still a mismatch bug between the paint canvas and the previews near the right/bottom edges.
-- Performance is improved, but slow browser environments can still lag while painting.
-- The water pass may still need refinement where shorelines interact with nearby land-to-land transitions.
+- TF2 import testing for the latest true 16-bit export path is still pending.
+- Older saved project files are auto-migrated into the current percentage-based terrain model when loaded.
 
 ## Next priorities
 
-1. Fix the paint-to-preview edge mismatch.
-2. Keep refining water behaviour where it interferes with nearby land slopes.
-3. Improve preview performance further for weak browser environments.
-4. Tighten export guidance and documentation for TF2 import workflow.
-5. Prepare the repo and app for public sharing and feedback.
+1. Test the latest export path in TF2 and confirm the contour issue is gone.
+2. Tighten export guidance and documentation for the TF2 import workflow.
+3. Gather real usage feedback before changing the terrain model further.
+
+## Future ideas
+
+- Optional `Minecraft mode` that intentionally quantizes terrain into stepped levels as a stylized export mode.

@@ -219,11 +219,11 @@ function App() {
         } catch {
           setWorkerFailed(true)
           const generated = generateTerrain(input)
-          pngBytes = encodeGrayscale16Png(generated.heights, preset.width, preset.height, 100)
+          pngBytes = encodeGrayscale16Png(generated.heights, preset.width, preset.height, 65535)
         }
       } else {
         const generated = generateTerrain(input)
-        pngBytes = encodeGrayscale16Png(generated.heights, preset.width, preset.height, 100)
+        pngBytes = encodeGrayscale16Png(generated.heights, preset.width, preset.height, 65535)
       }
 
       const blob = new Blob([Uint8Array.from(pngBytes)], { type: 'image/png' })
@@ -364,7 +364,6 @@ function App() {
             height={SKETCH_HEIGHT}
             brushSize={brushSize}
             activeClass={activeClass}
-            debugEdges={settings.debugEdges}
             onBrushSizeChange={setBrushSize}
             onActiveClassChange={setActiveClass}
             onPreviewChange={setPreviewSketch}
@@ -374,10 +373,10 @@ function App() {
           <HeightPreview
             title="Heightmap preview"
             caption=""
+            heights={preview?.heights ?? null}
             rgba={preview?.rgba ?? null}
             width={preview?.width ?? previewWidth}
             height={preview?.height ?? previewHeight}
-            debugEdges={settings.debugEdges}
           />
 
           <TerrainViewport
@@ -385,7 +384,6 @@ function App() {
             width={preview?.width ?? previewWidth}
             height={preview?.height ?? previewHeight}
             rangeMax={preview?.rangeMax ?? 100}
-            debugEdges={settings.debugEdges}
           />
         </div>
 
@@ -495,27 +493,18 @@ function App() {
               <span>Natural undulation</span>
             </label>
 
-            <label className="toggle">
-              <input
-                type="checkbox"
-                checked={settings.debugEdges}
-                onChange={(event) => updateSetting('debugEdges', event.target.checked)}
-              />
-              <span>Debug edges</span>
-            </label>
-
             <label className="field">
               <span>Noise amplitude</span>
               <input
                 type="range"
                 min="0"
-                max="80"
+                max="20"
                 step="1"
                 value={settings.noiseAmplitude}
                 onChange={(event) => updateSetting('noiseAmplitude', Number(event.target.value))}
                 disabled={!settings.noiseEnabled}
               />
-              <strong>{settings.noiseAmplitude}m</strong>
+              <strong>{settings.noiseAmplitude}%</strong>
             </label>
 
             <label className="field">

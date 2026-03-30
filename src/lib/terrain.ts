@@ -1,6 +1,8 @@
 import type { ExportProfile, GenerateTerrainInput, PreviewTerrain, TerrainClassId, TerrainSettings } from './types'
 import { TerrainClass } from './types'
 
+const FULL_HEIGHT_RANGE = 65535
+
 type Region = {
   id: number
   terrainClass: TerrainClassId
@@ -118,7 +120,7 @@ function getTargetHeight(terrainClass: TerrainClassId, settings: TerrainSettings
 }
 
 function getNoiseAmplitudePercent(settings: TerrainSettings): number {
-  return (settings.noiseAmplitude / Math.max(1, settings.importMaxElevation)) * 100
+  return settings.noiseAmplitude
 }
 
 function buildDirectHeightField(sketch: Uint8Array, width: number, height: number, settings: TerrainSettings): Float32Array {
@@ -485,20 +487,20 @@ export function generateTerrain(input: GenerateTerrainInput): PreviewTerrain {
         ? sampleBilinear(noise, sketchWidth, sketchHeight, sampleX, sampleY) * noiseAmplitudePercent
         : 0
       const heightValue = clamp(base + noiseValue, 1, topTarget)
-      const rounded = Math.round(heightValue)
-      heights[index] = rounded
-      minHeight = Math.min(minHeight, rounded)
-      maxHeight = Math.max(maxHeight, rounded)
+      const scaled = Math.round((heightValue / 100) * FULL_HEIGHT_RANGE)
+      heights[index] = scaled
+      minHeight = Math.min(minHeight, scaled)
+      maxHeight = Math.max(maxHeight, scaled)
     }
   }
 
-  const profile = buildExportProfile(outputWidth, outputHeight, 100)
+  const profile = buildExportProfile(outputWidth, outputHeight, FULL_HEIGHT_RANGE)
 
   return {
     width: outputWidth,
     height: outputHeight,
     heights,
-    rgba: heightsToRgba(heights, outputWidth, outputHeight, profile.rangeMax),
+    rgba: heightsToRgba(heights, outputWidth, outputHeight, FULL_HEIGHT_RANGE),
     minHeight: Number.isFinite(minHeight) ? minHeight : 0,
     maxHeight: Number.isFinite(maxHeight) ? maxHeight : 0,
     rangeMin: profile.rangeMin,

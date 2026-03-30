@@ -29,7 +29,7 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
       generated.heights,
       request.input.outputWidth,
       request.input.outputHeight,
-      100,
+      65535,
     )
     const response: WorkerResponse = {
       type: 'export',

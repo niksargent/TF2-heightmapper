@@ -3,13 +3,13 @@ import { useEffect, useRef } from 'react'
 type HeightPreviewProps = {
   title: string
   caption: string
+  heights: Uint16Array | null
   rgba: Uint8ClampedArray | null
   width: number
   height: number
-  debugEdges: boolean
 }
 
-export function HeightPreview({ title, caption, rgba, width, height, debugEdges }: HeightPreviewProps) {
+export function HeightPreview({ title, caption, heights, rgba, width, height }: HeightPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const rasterCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const drawRef = useRef<(() => void) | null>(null)
@@ -35,6 +35,17 @@ export function HeightPreview({ title, caption, rgba, width, height, debugEdges 
       }
 
       const imageData = new ImageData(new Uint8ClampedArray(rgba), width, height)
+      if (heights) {
+        for (let index = 0; index < heights.length; index += 1) {
+          if (heights[index] !== 0) {
+            continue
+          }
+          const pixelOffset = index * 4
+          imageData.data[pixelOffset] = 68
+          imageData.data[pixelOffset + 1] = 114
+          imageData.data[pixelOffset + 2] = 148
+        }
+      }
       rasterContext.putImageData(imageData, 0, 0)
 
       const renderWidth = Math.max(1, canvas.clientWidth)
@@ -47,16 +58,10 @@ export function HeightPreview({ title, caption, rgba, width, height, debugEdges 
       context.clearRect(0, 0, renderWidth, renderHeight)
       context.imageSmoothingEnabled = true
       context.drawImage(raster, 0, 0, renderWidth, renderHeight)
-
-      if (debugEdges) {
-        context.lineWidth = 2
-        context.strokeStyle = 'rgba(212, 40, 40, 0.95)'
-        context.strokeRect(1, 1, Math.max(0, renderWidth - 2), Math.max(0, renderHeight - 2))
-      }
     }
 
     drawRef.current()
-  }, [rgba, width, height])
+  }, [heights, rgba, width, height])
 
   useEffect(() => {
     const canvas = canvasRef.current
