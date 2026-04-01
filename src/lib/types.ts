@@ -25,13 +25,14 @@ export type TerrainSettings = {
   lowPercent: number
   mediumPercent: number
   highPercent: number
-  importMaxElevation: number
   smoothing: number
   noiseEnabled: boolean
   noiseAmplitude: number
   noiseScale: number
   noiseOctaves: number
   noiseSeed: number
+  minecraftMode: boolean
+  terraceStepPercent: number
 }
 
 export type PreviewTerrain = {
@@ -75,6 +76,8 @@ export type ProjectFileV1 = {
     noiseScale?: number
     noiseOctaves?: number
     noiseSeed?: number
+    minecraftMode?: boolean
+    terraceStepPercent?: number
   }
 }
 

@@ -16,11 +16,9 @@ Phase 1 is in active prototype form and already supports:
 - noise-based natural undulation controls
 - region-aware smoothing between painted land areas
 - shoreline-specific smoothing that starts at the water edge
-
-The terrain model is now based on relative height bands, not direct metres:
+- optional `Minecraft mode` terracing effect
 
 - `Low`, `Medium`, and `High` are percentages of the full grayscale range
-- `TF2 max elevation` is a separate import guidance value for the game
 
 ## Tech stack
 
@@ -55,11 +53,7 @@ The app exports:
 - water at `0`
 - full grayscale range reserved for the terrain model
 
-The TF2 import dialog still controls the real-world metre scale. The app surfaces that as:
-
-- `TF2 max elevation`
-- `Water level`
-- recommended import range in the export panel
+The TF2 import dialog still controls the real-world metre scale.
 
 ## Deployment
 
@@ -87,7 +81,3 @@ To publish:
 
 - TF2 import testing for the latest true 16-bit export path is still pending.
 - Older saved project files are auto-migrated into the current percentage-based terrain model when loaded.
-
-## Future ideas
-
-- Optional `Minecraft mode` that deliberately quantizes terrain into visible stepped levels for a blocky export style.

@@ -44,7 +44,7 @@ function asNumber(value: unknown): number | null {
 
 function migrateSettings(settings: LegacySettings | TerrainSettings): TerrainSettings {
   const legacySettings = settings as LegacySettings
-  const importMaxElevation = asNumber(settings.importMaxElevation) ?? DEFAULT_TERRAIN_SETTINGS.importMaxElevation
+  const importMaxElevation = asNumber(legacySettings.importMaxElevation) ?? 400
   const lowPercent = asNumber((settings as TerrainSettings).lowPercent)
   const mediumPercent = asNumber((settings as TerrainSettings).mediumPercent)
   const highPercent = asNumber((settings as TerrainSettings).highPercent)
@@ -57,7 +57,6 @@ function migrateSettings(settings: LegacySettings | TerrainSettings): TerrainSet
     lowPercent: migratedLowPercent,
     mediumPercent: Math.max(migratedLowPercent + 1, migratedMediumPercent),
     highPercent: Math.max(migratedMediumPercent + 1, migratedHighPercent),
-    importMaxElevation,
     smoothing: asNumber(settings.smoothing) ?? DEFAULT_TERRAIN_SETTINGS.smoothing,
     noiseEnabled: typeof settings.noiseEnabled === 'boolean' ? settings.noiseEnabled : DEFAULT_TERRAIN_SETTINGS.noiseEnabled,
     noiseAmplitude: clamp(
@@ -70,6 +69,14 @@ function migrateSettings(settings: LegacySettings | TerrainSettings): TerrainSet
     noiseScale: asNumber(settings.noiseScale) ?? DEFAULT_TERRAIN_SETTINGS.noiseScale,
     noiseOctaves: clamp(asNumber(settings.noiseOctaves) ?? DEFAULT_TERRAIN_SETTINGS.noiseOctaves, 1, 5),
     noiseSeed: asNumber(settings.noiseSeed) ?? DEFAULT_TERRAIN_SETTINGS.noiseSeed,
+    minecraftMode: typeof (settings as TerrainSettings).minecraftMode === 'boolean'
+      ? (settings as TerrainSettings).minecraftMode
+      : DEFAULT_TERRAIN_SETTINGS.minecraftMode,
+    terraceStepPercent: clamp(
+      asNumber((settings as TerrainSettings).terraceStepPercent) ?? DEFAULT_TERRAIN_SETTINGS.terraceStepPercent,
+      1,
+      20,
+    ),
   }
 }
 

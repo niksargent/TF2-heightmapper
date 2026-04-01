@@ -34,6 +34,7 @@ Current delivered scope:
 - project save/load
 - 16-bit grayscale PNG export
 - worker preview generation with main-thread fallback
+- optional `Minecraft mode` terracing switch
 
 ### Phase 2: Real-world map import
 
@@ -87,11 +88,6 @@ The editor now uses relative heights:
 - `Low`, `Medium`, and `High` are percentages of full terrain height
 - `Water` is fixed at `0`
 
-The real metre scale is handled separately:
-
-- `TF2 max elevation` is an import guidance control
-- the grayscale preview does not auto-stretch to whatever the tallest painted terrain happens to be
-
 This keeps the preview visually stable and makes the band labels intuitive.
 
 ## Terrain generation model
@@ -144,7 +140,7 @@ Current implementation targets:
 - exact TF2 preset dimensions
 - `16-bit` grayscale PNG
 - water at `0`
-- import guidance for TF2 range and water level
+- no hidden scaling metadata in the exported file
 
 ## Known issues
 
@@ -159,4 +155,4 @@ Current implementation targets:
 
 ## Future ideas
 
-- Optional `Minecraft mode` that intentionally quantizes terrain into stepped levels as a stylized export mode.
+- Additional stylized export modes beyond `Minecraft mode`.

@@ -4,13 +4,14 @@ export const DEFAULT_TERRAIN_SETTINGS: TerrainSettings = {
   lowPercent: 5,
   mediumPercent: 20,
   highPercent: 50,
-  importMaxElevation: 400,
   smoothing: 42,
   noiseEnabled: true,
   noiseAmplitude: 4,
   noiseScale: 18,
   noiseOctaves: 3,
   noiseSeed: 3712,
+  minecraftMode: false,
+  terraceStepPercent: 4,
 }
 
 export const TERRAIN_VISUALS: Record<TerrainClassId, TerrainVisual> = {

@@ -438,15 +438,37 @@ export function computePreviewResolution(width: number, height: number, maxEdge:
   return [Math.max(96, Math.round(maxEdge * aspect)), maxEdge]
 }
 
-export function buildExportProfile(width: number, height: number, importMaxElevation: number): ExportProfile {
+export function buildExportProfile(width: number, height: number): ExportProfile {
   return {
     width,
     height,
     bitDepth: 16,
     rangeMin: 0,
-    rangeMax: Math.max(1, Math.ceil(importMaxElevation)),
+    rangeMax: FULL_HEIGHT_RANGE,
     waterLevel: 0,
   }
+}
+
+function applyTerracing(heights: Uint16Array, settings: TerrainSettings): Uint16Array {
+  if (!settings.minecraftMode) {
+    return heights
+  }
+
+  const terraced = new Uint16Array(heights.length)
+  const step = Math.max(1, Math.round((settings.terraceStepPercent / 100) * FULL_HEIGHT_RANGE))
+
+  for (let index = 0; index < heights.length; index += 1) {
+    const value = heights[index]
+    if (value === 0) {
+      terraced[index] = 0
+      continue
+    }
+
+    const snapped = Math.max(1, Math.round(value / step) * step)
+    terraced[index] = Math.min(FULL_HEIGHT_RANGE, snapped)
+  }
+
+  return terraced
 }
 
 export function generateTerrain(input: GenerateTerrainInput): PreviewTerrain {
@@ -494,15 +516,23 @@ export function generateTerrain(input: GenerateTerrainInput): PreviewTerrain {
     }
   }
 
-  const profile = buildExportProfile(outputWidth, outputHeight, FULL_HEIGHT_RANGE)
+  const finalHeights = applyTerracing(heights, settings)
+  let finalMinHeight = Number.POSITIVE_INFINITY
+  let finalMaxHeight = Number.NEGATIVE_INFINITY
+  for (let index = 0; index < finalHeights.length; index += 1) {
+    finalMinHeight = Math.min(finalMinHeight, finalHeights[index])
+    finalMaxHeight = Math.max(finalMaxHeight, finalHeights[index])
+  }
+
+  const profile = buildExportProfile(outputWidth, outputHeight)
 
   return {
     width: outputWidth,
     height: outputHeight,
-    heights,
-    rgba: heightsToRgba(heights, outputWidth, outputHeight, FULL_HEIGHT_RANGE),
-    minHeight: Number.isFinite(minHeight) ? minHeight : 0,
-    maxHeight: Number.isFinite(maxHeight) ? maxHeight : 0,
+    heights: finalHeights,
+    rgba: heightsToRgba(finalHeights, outputWidth, outputHeight, FULL_HEIGHT_RANGE),
+    minHeight: Number.isFinite(finalMinHeight) ? finalMinHeight : 0,
+    maxHeight: Number.isFinite(finalMaxHeight) ? finalMaxHeight : 0,
     rangeMin: profile.rangeMin,
     rangeMax: profile.rangeMax,
   }

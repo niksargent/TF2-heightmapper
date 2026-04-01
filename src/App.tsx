@@ -269,23 +269,12 @@ function App() {
     event.target.value = ''
   }
 
-  const exportProfile = preview
-    ? {
-        width: preset.width,
-        height: preset.height,
-        bitDepth: 16 as const,
-        rangeMin: 0,
-        rangeMax: settings.importMaxElevation,
-        waterLevel: 0,
-      }
-    : {
-        width: preset.width,
-        height: preset.height,
-        bitDepth: 16 as const,
-        rangeMin: 0,
-        rangeMax: settings.importMaxElevation,
-        waterLevel: 0,
-      }
+  const exportProfile = {
+    width: preset.width,
+    height: preset.height,
+    bitDepth: 16 as const,
+    waterLevel: 0,
+  }
 
   return (
     <main className="app-shell">
@@ -459,19 +448,6 @@ function App() {
             </label>
 
             <label className="field">
-              <span>TF2 max elevation</span>
-              <input
-                type="range"
-                min="50"
-                max="3200"
-                step="10"
-                value={settings.importMaxElevation}
-                onChange={(event) => updateSetting('importMaxElevation', Number(event.target.value))}
-              />
-              <strong>{settings.importMaxElevation}m</strong>
-            </label>
-
-            <label className="field">
               <span>Smoothing</span>
               <input
                 type="range"
@@ -483,6 +459,30 @@ function App() {
               />
               <strong>{settings.smoothing}</strong>
             </label>
+
+            <label className="toggle">
+              <input
+                type="checkbox"
+                checked={settings.minecraftMode}
+                onChange={(event) => updateSetting('minecraftMode', event.target.checked)}
+              />
+              <span>Minecraft mode</span>
+            </label>
+
+            {settings.minecraftMode ? (
+              <label className="field">
+                <span>Terrace size</span>
+                <input
+                  type="range"
+                  min="1"
+                  max="20"
+                  step="1"
+                  value={settings.terraceStepPercent}
+                  onChange={(event) => updateSetting('terraceStepPercent', Number(event.target.value))}
+                />
+                <strong>{settings.terraceStepPercent}%</strong>
+              </label>
+            ) : null}
 
             <label className="toggle">
               <input
@@ -553,17 +553,13 @@ function App() {
                 <dd>{exportProfile.bitDepth}-bit grayscale</dd>
               </div>
               <div>
-                <dt>Range</dt>
-                <dd>{exportProfile.rangeMin}m to {exportProfile.rangeMax}m</dd>
-              </div>
-              <div>
                 <dt>Water level</dt>
                 <dd>{exportProfile.waterLevel}m</dd>
               </div>
             </dl>
 
             <p className="support-copy">
-              Paint with relative heights. White always means full height range; TF2 metres are set separately through the suggested import max elevation.
+              Paint with relative heights here, then choose the terrain range inside the TF2 import dialog.
             </p>
           </section>
         </aside>
